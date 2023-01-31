@@ -7,7 +7,7 @@ Introduction
 
 Filtration of medicinal ingredients was made by searching for concepts from the HemOnc release 2021 and having a relationship_id: 
 Has AB-drug cjgt Rx, Has cytotox chemo Rx, Has endocrine tx Rx, Has immunotherapy Rx, Has pept-drg cjg Rx, Has radiocjgt Rx, Has radiotherapy Rx, Has targeted tx Rx, Has antineopl Rx, Has immunosuppr Rx.
-Thus, over 10.000 standard RxNorm concepts are included.
+
 
 The key part of the package is located in the inst folder, where sql files are stored that can be used for 3 sql dialects: postgresql, bigquery, redshift.
 

@@ -78,18 +78,11 @@ createRegimens <- function(connectionDetails,
                   dateLagInput = dateLagInput,
                   generateRawEvents = generateRawEvents)
   usethis::ui_info('Vocabulary creation')
-  # createVocabulary(connection = connection,
-  #                  writeDatabaseSchema = writeDatabaseSchema,
-  #                  cdmDatabaseSchema = cdmDatabaseSchema,
-  #                  vocabularyTable = vocabularyTable,
-  #                  generateVocabTable = generateVocabTable)
-  voc <- vocabularyTablesToInsert()
-  DatabaseConnector::insertTable(
-    connection = connection,
-    databaseSchema = writeDatabaseSchema,
-    tableName = vocabularyTable,
-    data = voc
-    )
+  createVocabulary(connection = connection,
+                   writeDatabaseSchema = writeDatabaseSchema,
+                   cdmDatabaseSchema = cdmDatabaseSchema,
+                   vocabularyTable = vocabularyTable,
+                   generateVocabTable = generateVocabTable)
   usethis::ui_info('Regimen Formatting')
   createRegimenFormatTable(connection = connection,
                            writeDatabaseSchema = writeDatabaseSchema,
@@ -99,6 +92,7 @@ createRegimens <- function(connectionDetails,
                            vocabularyTable = vocabularyTable,
                            generateVocabTable = generateVocabTable
                            )
+
 
   if(isTRUE(writeToEpisodeTable)) {
     usethis::ui_info('Writing To Episode Table')
@@ -145,46 +139,4 @@ getHemoncIngredients <- function(
     connection,
     sql = sql
     )$CONCEPT_ID_2
-  }
-
-vocabularyTablesToInsert <- function(
-    connectionDetails,
-    cdmDatabaseSchema,
-    writeDatabaseSchema
-) {
-  on.exit(DBI::dbDisconnect(con))
-  call <- rlang::call2(ifelse(connectionDetails$dbms == 'postgres', 'Postgres', 'Redshift'), .ns = 'RPostgres')
-  dbname <- strsplit(connectionDetails$server(), '/')[[1]][[2]]
-  host <- strsplit(connectionDetails$server(), '/')[[1]][[1]]
-  con <- DBI::dbConnect(
-    eval(call),
-    dbname = dbname,
-    host = host,
-    user = connectionDetails$user(),
-    password = connectionDetails$password(),
-    port = connectionDetails$port()
-    )
-  cdm <- CDMConnector::cdm_from_con(con, cdm_schema = cdmDatabaseSchema, write_schema = writeDatabaseSchema)
-  cn <- cdm$concept %>% dplyr::filter(vocabulary_id == 'HemOnc')
-  cr <- cdm$concept_relationship %>% dplyr::filter(
-    relationship_id %in% c(
-      'Has cytotoxic chemo', 'Has immunosuppressor', 'Has local therapy',
-      'Has radioconjugate', 'Has pept-drug cjgt', 'Has supportive med' ,
-      'Has targeted therapy'))
-  fin <- cn %>% dplyr::inner_join(
-    cr, by = c('concept_id'= 'concept_id_2')) %>%
-    dplyr::select(concept_name, concept_id, concept_id_1) %>%
-    dplyr::inner_join(cn %>% dplyr::inner_join(cr, by = c('concept_id' = 'concept_id_1')) %>%
-                        dplyr::select(concept_id, concept_name), by = c('concept_id_1' = 'concept_id')) %>%
-    dplyr::mutate(ingredients = tolower(concept_name.x)) %>%
-    dplyr::select(ingredients, regimen = concept_name.y) %>%
-    dplyr::distinct() %>%
-    as.data.frame() %>%
-    dplyr::group_by(regimen) %>%
-    dplyr::reframe(regimen, ingredients = sort(paste(ingredients, collapse = ','))) %>%
-    dplyr::ungroup() %>%
-    dplyr::group_by(ingredients) %>%
-    dplyr::filter(row_number(ingredients) == 1) %>%
-    dplyr::ungroup()
-  return(fin)
   }

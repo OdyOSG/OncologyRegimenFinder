@@ -10,7 +10,7 @@ SELECT distinct concept_id_2 FROM @cdmDatabaseSchema.concept_relationship
                       'Has targeted tx Rx',
                       'Has antineopl Rx',
                       'Has immunosuppr Rx'
-                    ) @removeExclusion1 AND concept_id_2 NOT IN (
+                    )  AND concept_id_2 NOT IN (
 SELECT distinct ancestor_concept_id FROM
       @cdmDatabaseSchema.concept_ancestor
  JOIN (SELECT descendant_concept_id FROM
@@ -32,6 +32,6 @@ concept_class_id = 'Ingredient')
 
 
 
-@removeExclusion2
+
 
 

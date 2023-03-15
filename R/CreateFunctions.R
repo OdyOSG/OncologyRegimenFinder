@@ -74,19 +74,35 @@ createRawEvents <- function(connection,
 
   }
 }
-
 createVocabulary <- function(connection,
+                             connectionDetails,
                              writeDatabaseSchema,
                              cdmDatabaseSchema,
                              vocabularyTable,
-                             generateVocabTable){
+                             generateVocabTable
+                             ) {
+
   if(generateVocabTable) {
+    if(connectionDetails$dbms %in% c('postgresql', 'redshift')) {
+  vocabTbl <- suppressWarnings(vocabularyTablesToInsert(
+    connectionDetails = connectionDetails,
+    writeDatabaseSchema = writeDatabaseSchema,
+    cdmDatabaseSchema = cdmDatabaseSchema
+  ))
+  DatabaseConnector::insertTable(
+    connection = connection,
+    databaseSchema = writeDatabaseSchema,
+    tableName = vocabularyTable,
+    data = vocabTbl
+  )
+    } else {
   sql <- SqlRender::render(sql = readDbSql("RegimenVocabulary.sql", connection@dbms),
                            writeDatabaseSchema = writeDatabaseSchema,
                            cdmDatabaseSchema = cdmDatabaseSchema,
                            vocabularyTable = vocabularyTable)
 
   DatabaseConnector::executeSql(connection = connection, sql = sql)
+    }
   } else {
 
     ParallelLogger::logInfo("Vocabulary will not be created")
